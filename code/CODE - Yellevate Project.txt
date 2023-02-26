@@ -1,0 +1,54 @@
+﻿1. The processing time in which invoices are settled (average # of days rounded to a whole number).
+
+
+SELECT ROUND (AVG(days_settled))
+AS average_days_settled
+FROM yellevate_invoices
+
+
+2. The processing time for the company to settle disputes (average # of days rounded to a whole number).
+
+
+SELECT ROUND (AVG(days_settled))
+AS average_days_settled_disputes
+FROM yellevate_invoices
+WHERE disputed >0
+
+
+3. Percentage of disputes received by the company that were lost (within two decimal places).
+
+
+SELECT ROUND((SUN(dispute_lost)/SUM(disputed)*100),2)
+AS dispute_lost_percentage
+FROM yellevate_invoices
+
+
+4. Percentage of revenue lost from disputes (within two decimal places).
+
+
+ALTER TABLE yellevate_invoices
+ADD COLUMN IF NOT EXISTS revenue_lost NUMERIC;
+
+
+UPDATE yellevate_invoices
+SET revenue_lost = invoice_amount_usd
+WHERE dispute_lost >0;
+
+
+UPDATE yellevate_invoice
+SET revenue_lost = 0
+WHERE dispute_lost = 0;
+
+
+SELECT ROUND(SUM(revenue_lost)/SUM(invoice_amount_usd)*100,2)
+AS revenue_lost_percentage
+FROM yellevate_invoices
+
+
+5. The country where the company reached the highest losses from lost disputes (in USD)
+
+
+SELECT country, SUM(revenue_lost) AS sum_revenue_lost
+FROM yellevate_invoices
+GROUP BY country
+ORDER BY sum_revenue_lost DESC
